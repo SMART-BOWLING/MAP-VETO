@@ -187,7 +187,7 @@
         /* Плашки с названиями карт */
         .map-label {
             position: absolute;
-            background-color: #ffffff;
+            background-color: #e6e6e6; /* Цвет подложки карты */
             color: #000;
             font-family: 'Arial Black', Arial, sans-serif;
             font-weight: 900;
@@ -202,6 +202,29 @@
             transform: translate(-50%, -50%);
             text-transform: uppercase;
             white-space: nowrap;
+        }
+
+        /* Плашка — прижата к правому краю, немного заезжает, без тени */
+        .map-label-right {
+            left: auto;
+            right: -3px;
+            transform: translateY(-50%);
+            border-radius: 7px;
+            box-shadow: none;
+        }
+
+        /* Плашка — прижата к левому краю, немного заезжает, без тени */
+        .map-label-left {
+            left: -3px;
+            right: auto;
+            transform: translateY(-50%);
+            border-radius: 7px;
+            box-shadow: none;
+        }
+
+        /* Плашка нижней карты — по центру, без тени */
+        .map-label-bottom {
+            box-shadow: none;
         }
 
         /* Нижняя карточка */
@@ -223,6 +246,8 @@
             .map-img-wrapper { margin: 0 5px; }
             .map-img { border-radius: 5px; }
             .map-label { font-size: 14px; padding: 4px 12px; border-radius: 5px; }
+            .map-label-right { right: -2px; }
+            .map-label-left { left: -2px; }
             .map-card-bottom { height: 80px; border-radius: 10px; padding: 5px; }
         }
 
@@ -268,7 +293,7 @@
                         <div class="team-box left" id="logoA"></div>
                         <div class="map-img-wrapper">
                             <div id="mapImgA" class="map-img"></div>
-                            <div id="mapLabelA" class="map-label">MAP 1</div>
+                            <div id="mapLabelA" class="map-label map-label-right">MAP 1</div>
                         </div>
                     </div>
 
@@ -276,7 +301,7 @@
                     <div class="map-card">
                         <div class="map-img-wrapper">
                             <div id="mapImgM" class="map-img"></div>
-                            <div id="mapLabelM" class="map-label">MAP 2</div>
+                            <div id="mapLabelM" class="map-label map-label-left">MAP 2</div>
                         </div>
                         <div class="team-box right" id="logoM"></div>
                     </div>
@@ -285,7 +310,7 @@
                     <div class="map-card-bottom">
                         <div class="map-img-wrapper">
                             <div id="mapImgBottom" class="map-img"></div>
-                            <div id="mapLabelBottom" class="map-label">MAP 3</div>
+                            <div id="mapLabelBottom" class="map-label map-label-bottom">MAP 3</div>
                         </div>
                     </div>
                 </div>
@@ -406,6 +431,9 @@
                 UI._timer = setTimeout(() => el.style.display = "none", 5000);
             }
         };
+
+        /* ДЕФОЛТНАЯ ССЫЛКА НА ФОН ХОЛСТА */
+        const DEFAULT_BG_IMAGE = "https://res.cloudinary.com/dplmdnxvk/image/upload/v1794757869/axvvp2zcfnbkq9cuab34.png";
 
         /* МАСШТАБ КАРТОЧЕК */
         const mapsGrid = document.getElementById('mapsGrid');
@@ -732,6 +760,9 @@
         loadTeams();
         loadMaps();
 
+        // Ставим фон холста по умолчанию
+        showImage(DEFAULT_BG_IMAGE);
+
         /* ЭКСПОРТ */
         let EXPORT_SCALE = 3;
         document.getElementById('exportScale').addEventListener('change', (e) => {
@@ -915,7 +946,7 @@
                 const fontSize = parseFloat(computedStyle.fontSize) * EXPORT_SCALE;
                 
                 ctx.save();
-                ctx.fillStyle = computedStyle.backgroundColor || '#ffffff';
+                ctx.fillStyle = computedStyle.backgroundColor || '#e6e6e6';
                 ctx.beginPath();
                 if (ctx.roundRect) {
                     ctx.roundRect(x, y, w, h, borderRadius);
