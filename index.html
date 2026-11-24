@@ -128,7 +128,7 @@
             display: flex; flex-direction: column; gap: 12px;
             width: 92%;
             padding: 8px;
-            transform: translateY(0) scale(1.02);
+            transform: translateY(20px) scale(1.02);
             transition: transform 0.1s ease-out;
             transform-origin: center center;
         }
@@ -334,41 +334,26 @@
                 </div>
             </details>
 
-            <!-- МАСШТАБ КАРТОЧЕК -->
-            <div class="col-label">
-                <div style="display: flex; justify-content: space-between;">
-                    <span>Масштаб карточек</span>
-                </div>
-                <div class="range-wrapper">
+            <!-- СКРЫТЫЕ НАСТРОЙКИ КАРТОЧЕК -->
+            <details class="col-label">
+                <summary>Настройки карточек (масштаб и сдвиг)</summary>
+                <div class="range-wrapper" style="margin-top: 8px;">
+                    <span style="min-width: 60px; font-size: 13px;">Масштаб:</span>
                     <input type="range" id="gridScale" min="0.5" max="1.5" step="0.01" value="1.02">
                     <span class="range-value" id="gridScaleVal">102%</span>
                 </div>
-            </div>
-
-            <!-- СДВИГ КАРТОЧЕК -->
-            <div class="col-label">
-                <div style="display: flex; justify-content: space-between;">
-                    <span>Сдвиг карточек (вверх/вниз)</span>
+                <div class="range-wrapper" style="margin-top: 8px;">
+                    <span style="min-width: 60px; font-size: 13px;">Сдвиг:</span>
+                    <input type="range" id="gridOffsetY" min="-100" max="100" step="1" value="20">
+                    <span class="range-value" id="gridOffsetYVal">20 px</span>
                 </div>
-                <div class="range-wrapper">
-                    <input type="range" id="gridOffsetY" min="-100" max="100" step="1" value="0">
-                    <span class="range-value" id="gridOffsetYVal">0 px</span>
-                </div>
-            </div>
+            </details>
 
             <div class="action-buttons">
                 <div class="btn-group">
                     <button id="downloadBtn" class="secondary-btn">Скачать (PNG)</button>
                     <button id="shareBtn" class="secondary-btn" style="display:none;">Поделиться</button>
                 </div>
-                <label class="row-label">
-                    <span>Разрешение экспорта:</span>
-                    <select id="exportScale">
-                        <option value="2">×2</option>
-                        <option value="3" selected>×3 (рекоменд.)</option>
-                        <option value="4">×4</option>
-                    </select>
-                </label>
             </div>
 
             <!-- БЛОК КОМАНД -->
@@ -446,6 +431,9 @@
         /* ДЕФОЛТНАЯ ССЫЛКА НА ФОН ХОЛСТА */
         const DEFAULT_BG_IMAGE = "https://res.cloudinary.com/dplmdnxvk/image/upload/v1794757869/axvvp2zcfnbkq9cuab34.png";
 
+        /* ЭКСПОРТ — ВСЕГДА ×3 */
+        const EXPORT_SCALE = 3;
+
         /* МАСШТАБ И СДВИГ КАРТОЧЕК */
         const mapsGrid = document.getElementById('mapsGrid');
         const gridScaleInput = document.getElementById('gridScale');
@@ -454,7 +442,7 @@
         const gridOffsetYVal = document.getElementById('gridOffsetYVal');
 
         let currentScale = 1.02;
-        let currentOffsetY = 0;
+        let currentOffsetY = 20;
 
         function applyGridTransform() {
             mapsGrid.style.transform = `translateY(${currentOffsetY}px) scale(${currentScale})`;
@@ -472,7 +460,7 @@
             applyGridTransform();
         });
 
-        // Применяем 102% сразу при загрузке
+        // Применяем начальные значения сразу при загрузке
         applyGridTransform();
 
         /* ФОН */
@@ -793,12 +781,6 @@
 
         // Ставим фон холста по умолчанию
         showImage(DEFAULT_BG_IMAGE);
-
-        /* ЭКСПОРТ */
-        let EXPORT_SCALE = 3;
-        document.getElementById('exportScale').addEventListener('change', (e) => {
-            EXPORT_SCALE = parseInt(e.target.value, 10) || 3;
-        });
 
         // Вспомогательная функция: загрузка изображения по URL (для Canvas API)
         function loadImage(src) {
