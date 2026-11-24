@@ -283,7 +283,7 @@
         <div class="preview" id="preview">
             <div class="canvas" id="canvasBoard">
                 <div class="bg-layer" id="bgLayer">
-                    <img id="bgImage" alt="" style="display:none;">
+                    <img id="bgImage" alt="" style="display:none;" crossorigin="anonymous">
                 </div>
 
                 <!-- Сетка карт, к которой применяется масштаб -->
@@ -475,6 +475,8 @@
         }
 
         function showImage(src) {
+            // ВАЖНО: crossOrigin ДО установки src — иначе холст станет "грязным"
+            bgImage.crossOrigin = 'anonymous';
             bgImage.onload = () => {
                 hasImage = true;
                 bgImage.style.display = 'block';
@@ -619,8 +621,8 @@
         /* API И ДАННЫЕ */
         const API_URL = "https://script.google.com/macros/s/AKfycbxJZEfppSo6QZpmpiEDR1FaOpIjHdfQDXdj-x80uoIy-SU30nKgIgfvr3DNgQbroi53/exec";
         const SHEET_ID = "188jMHUJs1KkmCAzG7XZYTnTY9SnNIx0JlXJoEdMTees";
-        
-        const state = { 
+
+        const state = {
             teams: new Map(),
             maps: new Map()
         };
@@ -672,10 +674,10 @@
             const statusEl = document.getElementById(`status${slotId}`);
 
             const value = input.value.trim();
-            
+
             boxEl.style.backgroundImage = 'none';
             if (statusEl) statusEl.textContent = "";
-            
+
             if (!value) return;
 
             const team = state.teams.get(value.toLowerCase());
@@ -704,7 +706,7 @@
             try {
                 const data = await fetchSheet("MAPS");
                 state.maps.clear();
-                
+
                 data.slice(1).forEach(row => {
                     const mapName = row[0] ? String(row[0]).trim() : "";
                     const mapImg = row[2] ? String(row[2]).trim() : "";
@@ -724,11 +726,11 @@
             const selectA = document.getElementById('mapSelectA');
             const selectM = document.getElementById('mapSelectM');
             const selectBottom = document.getElementById('mapSelectBottom');
-            
+
             const options = Array.from(state.maps.keys()).sort((a, b) => a.localeCompare(b))
                 .map(name => `<option value="${name}">${name}</option>`)
                 .join('');
-                
+
             selectA.innerHTML = `<option value="">-- Выберите карту --</option>` + options;
             selectM.innerHTML = `<option value="">-- Выберите карту --</option>` + options;
             selectBottom.innerHTML = `<option value="">-- Выберите карту --</option>` + options;
@@ -740,9 +742,9 @@
 
         function applyMap(slotId, mapName) {
             if (!mapName) return;
-            
+
             const imgSrc = state.maps.get(mapName);
-            
+
             const labelEl = document.getElementById(`mapLabel${slotId}`);
             if (labelEl) labelEl.textContent = mapName;
 
@@ -831,6 +833,35 @@
             ctx.restore();
         }
 
+        // Рисует фон холста в отдельный canvas (чистый, без DOM-загрязнений)
+        function snapshotBgAsCanvas() {
+            if (!hasImage || !bgImage.naturalWidth) return null;
+            const rect = canvas.getBoundingClientRect();
+            const cw = Math.round(rect.width * EXPORT_SCALE);
+            const ch = Math.round(rect.height * EXPORT_SCALE);
+            const tmp = document.createElement('canvas');
+            tmp.width = cw;
+            tmp.height = ch;
+            const tctx = tmp.getContext('2d');
+            tctx.imageSmoothingQuality = 'high';
+
+            // Масштабируем всё в координатах экспорта
+            const s = EXPORT_SCALE;
+            tctx.save();
+            tctx.translate(cw / 2, ch / 2);
+            tctx.translate(offsetX * s, offsetY * s);
+            tctx.scale(scale * s, scale * s);
+            tctx.drawImage(
+                bgImage,
+                -bgImage.naturalWidth / 2,
+                -bgImage.naturalHeight / 2,
+                bgImage.naturalWidth,
+                bgImage.naturalHeight
+            );
+            tctx.restore();
+            return tmp;
+        }
+
         async function renderCompositeCanvas() {
             const rect = canvas.getBoundingClientRect();
             const cssW = Math.round(rect.width);
@@ -843,25 +874,20 @@
             out.height = outH;
             const ctx = out.getContext('2d');
 
-            // 1. Фон холста
-            if (!hasImage || !bgImage.naturalWidth) {
+            // 1. Фон — рисуем вручную в out, чтобы не зависеть от html2canvas
+            const bgCanvas = snapshotBgAsCanvas();
+            if (bgCanvas) {
+                ctx.drawImage(bgCanvas, 0, 0, outW, outH);
+            } else {
                 const cssBg = getComputedStyle(canvas).backgroundColor;
                 ctx.fillStyle = (cssBg === 'rgba(0, 0, 0, 0)') ? '#6a1b9a' : cssBg;
                 ctx.fillRect(0, 0, outW, outH);
-            } else {
-                const s = EXPORT_SCALE;
-                ctx.save();
-                ctx.translate(outW / 2, outH / 2);
-                ctx.translate(offsetX * s, offsetY * s);
-                ctx.scale(scale * s, scale * s);
-                ctx.drawImage(bgImage, -bgImage.naturalWidth / 2, -bgImage.naturalHeight / 2, bgImage.naturalWidth, bgImage.naturalHeight);
-                ctx.restore();
             }
 
             // 2. Снимаем DOM без картинок (только плашки, текст, фон карточек)
             const bgImagesList = ['mapImgA', 'mapImgM', 'mapImgBottom', 'logoA', 'logoM'].map(id => document.getElementById(id));
             const savedBgs = bgImagesList.map(el => el.style.backgroundImage);
-            
+
             bgImagesList.forEach(el => el.style.backgroundImage = 'none');
 
             // ВАЖНО: временно убираем текст из HTML, чтобы html2canvas не рисовал его (нарисуем сами, чтобы был четким)
@@ -878,7 +904,7 @@
                     backgroundColor: null,
                     scale: EXPORT_SCALE,
                     useCORS: true,
-                    allowTaint: false,
+                    allowTaint: false,   // ← важно: не разрешаем "грязный" холст
                     logging: false,
                     windowWidth: document.documentElement.scrollWidth,
                     windowHeight: document.documentElement.scrollHeight
@@ -898,7 +924,7 @@
                 if (!imgUrl) return;
                 const el = document.getElementById(elementId);
                 if (!el) return;
-                
+
                 const r = el.getBoundingClientRect();
                 const x = (r.left - canvasRect.left) * EXPORT_SCALE;
                 const y = (r.top - canvasRect.top) * EXPORT_SCALE;
@@ -934,17 +960,17 @@
             const drawLabel = (id, text) => {
                 const el = document.getElementById(id);
                 if (!el) return;
-                
+
                 const r = el.getBoundingClientRect();
                 const x = (r.left - canvasRect.left) * EXPORT_SCALE;
                 const y = (r.top - canvasRect.top) * EXPORT_SCALE;
                 const w = r.width * EXPORT_SCALE;
                 const h = r.height * EXPORT_SCALE;
-                
+
                 const computedStyle = window.getComputedStyle(el);
                 const borderRadius = parseFloat(computedStyle.borderRadius) * EXPORT_SCALE;
                 const fontSize = parseFloat(computedStyle.fontSize) * EXPORT_SCALE;
-                
+
                 ctx.save();
                 ctx.fillStyle = computedStyle.backgroundColor || '#e6e6e6';
                 ctx.beginPath();
@@ -959,10 +985,10 @@
                 ctx.font = `900 ${fontSize}px ${computedStyle.fontFamily}`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                
-                const textY = y + h / 2 + (fontSize * 0.05); 
+
+                const textY = y + h / 2 + (fontSize * 0.05);
                 ctx.fillText(text, x + w / 2, textY);
-                
+
                 ctx.restore();
             };
 
@@ -997,6 +1023,7 @@
             try {
                 const out = await renderCompositeCanvas();
                 const blob = await canvasToBlob(out);
+                if (!blob) throw new Error("Не удалось получить изображение");
                 UI.status(`Готово: ${out.width}×${out.height} px, ${(blob.size / 1024 / 1024).toFixed(2)} МБ`, 'success');
                 return { blob, width: out.width, height: out.height };
             } catch (e) {
