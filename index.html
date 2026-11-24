@@ -23,15 +23,6 @@
             flex-direction: column;
         }
 
-        /* --- ВКЛАДКИ --- */
-        .tabs { display: flex; gap: 6px; width: 100%; max-width: 1100px; margin: 0 auto 16px; padding: 0; overflow-x: auto; }
-        .tabs button {
-            flex: 1 1 0; padding: 10px 16px; border: none; border-radius: 10px;
-            background: #e5e5ea; color: #1a2b3c; font: inherit; font-size: 15px;
-            font-weight: 600; white-space: nowrap; cursor: pointer; transition: background 0.2s;
-        }
-        .tabs button.active { background: #1a2b3c; color: #fff; }
-
         /* --- КОНТЕЙНЕР --- */
         .app-container { display: flex; flex-direction: column; width: 100%; max-width: 1100px; align-items: center; gap: 24px; }
         .controls { display: flex; flex-direction: column; gap: 10px; max-width: 521px; min-width: 0; width: 100%; }
@@ -204,21 +195,27 @@
             white-space: nowrap;
         }
 
-        /* Плашка — прижата к правому краю, немного заезжает, без тени */
+        /* Плашка верхней карты — прижата к правому краю, справа без закругления, без тени */
         .map-label-right {
             left: auto;
             right: -3px;
             transform: translateY(-50%);
-            border-radius: 7px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-top-left-radius: 7px;
+            border-bottom-left-radius: 7px;
             box-shadow: none;
         }
 
-        /* Плашка — прижата к левому краю, немного заезжает, без тени */
+        /* Плашка средней карты — прижата к левому краю, слева без закругления, без тени */
         .map-label-left {
             left: -3px;
             right: auto;
             transform: translateY(-50%);
-            border-radius: 7px;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            border-top-right-radius: 7px;
+            border-bottom-right-radius: 7px;
             box-shadow: none;
         }
 
@@ -238,7 +235,7 @@
         .map-card-bottom .map-img-wrapper { margin: 0; }
         .map-card-bottom .map-img { border-radius: 8px; }
 
-        /* Медиа-запросы для маленьких экранов — размеры как были */
+        /* Медиа-запросы для маленьких экранов */
         @media (max-width: 500px) {
             .maps-grid { width: 95%; gap: 10px; }
             .map-card { height: 80px; padding: 5px; border-radius: 10px; }
@@ -246,8 +243,20 @@
             .map-img-wrapper { margin: 0 5px; }
             .map-img { border-radius: 5px; }
             .map-label { font-size: 14px; padding: 4px 12px; border-radius: 5px; }
-            .map-label-right { right: -2px; }
-            .map-label-left { left: -2px; }
+            .map-label-right {
+                right: -2px;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+                border-top-left-radius: 5px;
+                border-bottom-left-radius: 5px;
+            }
+            .map-label-left {
+                left: -2px;
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+                border-top-right-radius: 5px;
+                border-bottom-right-radius: 5px;
+            }
             .map-card-bottom { height: 80px; border-radius: 10px; padding: 5px; }
         }
 
@@ -272,10 +281,6 @@
 <body>
 
     <div id="statusMessage" class="status"></div>
-
-    <nav class="tabs" id="tabs">
-        <button type="button" class="active" data-tab="bracket">Карты и Команды</button>
-    </nav>
 
     <div class="app-container">
 
@@ -349,13 +354,6 @@
                 </div>
             </details>
 
-            <div class="action-buttons">
-                <div class="btn-group">
-                    <button id="downloadBtn" class="secondary-btn">Скачать (PNG)</button>
-                    <button id="shareBtn" class="secondary-btn" style="display:none;">Поделиться</button>
-                </div>
-            </div>
-
             <!-- БЛОК КОМАНД -->
             <div class="match-row">
                 <div class="control-group">
@@ -408,6 +406,14 @@
                             <option value="">Загрузка карт...</option>
                         </select>
                     </div>
+                </div>
+            </div>
+
+            <!-- КНОПКИ В САМОМ НИЗУ -->
+            <div class="action-buttons">
+                <div class="btn-group">
+                    <button id="downloadBtn" class="secondary-btn">Скачать (PNG)</button>
+                    <button id="shareBtn" class="secondary-btn" style="display:none;">Поделиться</button>
                 </div>
             </div>
 
