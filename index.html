@@ -122,13 +122,13 @@
             pointer-events: none; max-width: none; max-height: none;
         }
 
-        /* --- СЕТКА КАРТ (с поддержкой масштаба) --- */
+        /* --- СЕТКА КАРТ (с поддержкой масштаба и сдвига) --- */
         .maps-grid {
             position: relative; z-index: 2;
             display: flex; flex-direction: column; gap: 12px;
             width: 92%;
             padding: 8px;
-            transform: scale(1);
+            transform: translateY(0) scale(1.02);
             transition: transform 0.1s ease-out;
             transform-origin: center center;
         }
@@ -340,8 +340,19 @@
                     <span>Масштаб карточек</span>
                 </div>
                 <div class="range-wrapper">
-                    <input type="range" id="gridScale" min="0.5" max="1.5" step="0.01" value="1.0">
-                    <span class="range-value" id="gridScaleVal">100%</span>
+                    <input type="range" id="gridScale" min="0.5" max="1.5" step="0.01" value="1.02">
+                    <span class="range-value" id="gridScaleVal">102%</span>
+                </div>
+            </div>
+
+            <!-- СДВИГ КАРТОЧЕК -->
+            <div class="col-label">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Сдвиг карточек (вверх/вниз)</span>
+                </div>
+                <div class="range-wrapper">
+                    <input type="range" id="gridOffsetY" min="-100" max="100" step="1" value="0">
+                    <span class="range-value" id="gridOffsetYVal">0 px</span>
                 </div>
             </div>
 
@@ -435,16 +446,34 @@
         /* ДЕФОЛТНАЯ ССЫЛКА НА ФОН ХОЛСТА */
         const DEFAULT_BG_IMAGE = "https://res.cloudinary.com/dplmdnxvk/image/upload/v1794757869/axvvp2zcfnbkq9cuab34.png";
 
-        /* МАСШТАБ КАРТОЧЕК */
+        /* МАСШТАБ И СДВИГ КАРТОЧЕК */
         const mapsGrid = document.getElementById('mapsGrid');
         const gridScaleInput = document.getElementById('gridScale');
         const gridScaleVal = document.getElementById('gridScaleVal');
+        const gridOffsetYInput = document.getElementById('gridOffsetY');
+        const gridOffsetYVal = document.getElementById('gridOffsetYVal');
+
+        let currentScale = 1.02;
+        let currentOffsetY = 0;
+
+        function applyGridTransform() {
+            mapsGrid.style.transform = `translateY(${currentOffsetY}px) scale(${currentScale})`;
+            gridScaleVal.textContent = Math.round(currentScale * 100) + '%';
+            gridOffsetYVal.textContent = Math.round(currentOffsetY) + ' px';
+        }
 
         gridScaleInput.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            mapsGrid.style.transform = `scale(${val})`;
-            gridScaleVal.textContent = Math.round(val * 100) + '%';
+            currentScale = parseFloat(e.target.value);
+            applyGridTransform();
         });
+
+        gridOffsetYInput.addEventListener('input', (e) => {
+            currentOffsetY = parseFloat(e.target.value);
+            applyGridTransform();
+        });
+
+        // Применяем 102% сразу при загрузке
+        applyGridTransform();
 
         /* ФОН */
         const canvas = document.getElementById('canvasBoard');
